@@ -1,6 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-lazy val `log4cats-log4s` = project.in(file("."))
+lazy val `log4cats-log4s` = project
+  .in(file("."))
   .settings(commonSettings, releaseSettings, skipOnPublishSettings)
   .aggregate(coreJVM, coreJS)
 
@@ -14,54 +15,51 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     name := "log4cats-log4s"
   )
 
-lazy val docs = project.in(file("docs"))
+lazy val docs = project
+  .in(file("docs"))
   .settings(commonSettings, skipOnPublishSettings, micrositeSettings)
   .dependsOn(coreJVM)
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(TutPlugin)
 
-  lazy val contributors = Seq(
-    "ChristopherDavenport" -> "Christopher Davenport",
-    "lorandszakacs"        -> "Loránd Szakács"
-  )
+lazy val contributors = Seq(
+  "ChristopherDavenport" -> "Christopher Davenport",
+  "lorandszakacs" -> "Loránd Szakács"
+)
 
-val catsV = "2.0.0-M4"
-val catsEffectV = "2.0.0-M4"
-val log4sV = "1.8.2"
+val catsV = "2.1.1"
+val catsEffectV = "2.1.3"
+val log4sV = "1.8.3-SNAPSHOT"
 
-val log4catsV = "0.4.0-M1"
+val log4catsV = "1.1.1"
 
-val specs2V = "4.5.1"
+val specs2V = "4.9.4"
 
-val kindProjectorV = "0.10.3"
+val kindProjectorV = "0.11.0"
 val betterMonadicForV = "0.3.0"
 
 // General Settings
 lazy val commonSettings = Seq(
   organization := "io.chrisdavenport",
-
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.13.0", scalaVersion.value, "2.11.12"),
+  scalaVersion := "2.12.11",
+  crossScalaVersions := Seq("2.13.2", scalaVersion.value),
   scalacOptions += "-Yrangepos",
-
   scalacOptions in (Compile, doc) ++= Seq(
-      "-groups",
-      "-sourcepath", (baseDirectory in LocalRootProject).value.getAbsolutePath,
-      "-doc-source-url", "https://github.com/ChristopherDavenport/log4cats-log4s/blob/v" + version.value + "€{FILE_PATH}.scala"
+    "-groups",
+    "-sourcepath",
+    (baseDirectory in LocalRootProject).value.getAbsolutePath,
+    "-doc-source-url",
+    "https://github.com/ChristopherDavenport/log4cats-log4s/blob/v" + version.value + "€{FILE_PATH}.scala"
   ),
-
-  addCompilerPlugin("org.typelevel" % "kind-projector" % kindProjectorV cross CrossVersion.binary),
-  addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % betterMonadicForV),
+  addCompilerPlugin("org.typelevel" % "kind-projector"     % kindProjectorV cross CrossVersion.full),
+  addCompilerPlugin("com.olegpy"   %% "better-monadic-for" % betterMonadicForV),
   libraryDependencies ++= Seq(
-    "org.typelevel"               %%% "cats-core"                  % catsV,
-
-    "org.typelevel"               %%% "cats-effect"                % catsEffectV,
-
-    "io.chrisdavenport"           %%% "log4cats-core"              % log4catsV,
-    "org.log4s"                   %%% "log4s"                     % log4sV,
-
-    "org.specs2"                  %%% "specs2-core"                % specs2V       % Test,
-    "org.specs2"                  %%% "specs2-scalacheck"          % specs2V       % Test
+    "org.typelevel" %%% "cats-core"         % catsV,
+    "org.typelevel" %%% "cats-effect"       % catsEffectV,
+    "io.chrisdavenport" %%% "log4cats-core" % log4catsV,
+    "org.log4s" %%% "log4s"                 % log4sV,
+    "org.specs2" %%% "specs2-core"          % specs2V % Test,
+    "org.specs2" %%% "specs2-scalacheck"    % specs2V % Test
   )
 )
 
@@ -95,13 +93,12 @@ lazy val releaseSettings = {
       for {
         username <- Option(System.getenv().get("SONATYPE_USERNAME"))
         password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
-      } yield
-        Credentials(
-          "Sonatype Nexus Repository Manager",
-          "oss.sonatype.org",
-          username,
-          password
-        )
+      } yield Credentials(
+        "Sonatype Nexus Repository Manager",
+        "oss.sonatype.org",
+        username,
+        password
+      )
     ).toSeq,
     publishArtifact in Test := false,
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -119,13 +116,13 @@ lazy val releaseSettings = {
     },
     pomExtra := {
       <developers>
-        {for ((username, name) <- contributors) yield
-        <developer>
+        {
+        for ((username, name) <- contributors) yield <developer>
           <id>{username}</id>
           <name>{name}</name>
           <url>http://github.com/{username}</url>
         </developer>
-        }
+      }
       </developers>
     }
   )
@@ -138,10 +135,10 @@ lazy val mimaSettings = {
     val majorVersions: List[Int] =
       if (major == 0 && minor == 0) List.empty[Int] // If 0.0.x do not check MiMa
       else List(major)
-    val minorVersions : List[Int] =
+    val minorVersions: List[Int] =
       if (major >= 1) Range(0, minor).inclusive.toList
       else List(minor)
-    def patchVersions(currentMinVersion: Int): List[Int] = 
+    def patchVersions(currentMinVersion: Int): List[Int] =
       if (minor == 0 && patch == 0) List.empty[Int]
       else if (currentMinVersion != minor) List(0)
       else Range(0, patch - 1).inclusive.toList
@@ -158,7 +155,7 @@ lazy val mimaSettings = {
     Version(version) match {
       case Some(Version(major, Seq(minor, patch), _)) =>
         semverBinCompatVersions(major.toInt, minor.toInt, patch.toInt)
-          .map{case (maj, min, pat) => maj.toString + "." + min.toString + "." + pat.toString}
+          .map { case (maj, min, pat) => maj.toString + "." + min.toString + "." + pat.toString }
       case _ =>
         Set.empty[String]
     }
@@ -173,7 +170,7 @@ lazy val mimaSettings = {
     mimaFailOnProblem := mimaVersions(version.value).toList.headOption.isDefined,
     mimaPreviousArtifacts := (mimaVersions(version.value) ++ extraVersions)
       .filterNot(excludedVersions.contains(_))
-      .map{v => 
+      .map { v =>
         val moduleN = moduleName.value + "_" + scalaBinaryVersion.value.toString
         organization.value % moduleN % v
       },
@@ -220,9 +217,21 @@ lazy val micrositeSettings = {
     micrositePushSiteWith := GitHub4s,
     micrositeGithubToken := sys.env.get("GITHUB_TOKEN"),
     micrositeExtraMdFiles := Map(
-        file("CHANGELOG.md")        -> ExtraMdFileConfig("changelog.md", "page", Map("title" -> "changelog", "section" -> "changelog", "position" -> "100")),
-        file("CODE_OF_CONDUCT.md")  -> ExtraMdFileConfig("code-of-conduct.md",   "page", Map("title" -> "code of conduct",   "section" -> "code of conduct",   "position" -> "101")),
-        file("LICENSE")             -> ExtraMdFileConfig("license.md",   "page", Map("title" -> "license",   "section" -> "license",   "position" -> "102"))
+      file("CHANGELOG.md") -> ExtraMdFileConfig(
+        "changelog.md",
+        "page",
+        Map("title" -> "changelog", "section" -> "changelog", "position" -> "100")
+      ),
+      file("CODE_OF_CONDUCT.md") -> ExtraMdFileConfig(
+        "code-of-conduct.md",
+        "page",
+        Map("title" -> "code of conduct", "section" -> "code of conduct", "position" -> "101")
+      ),
+      file("LICENSE") -> ExtraMdFileConfig(
+        "license.md",
+        "page",
+        Map("title" -> "license", "section" -> "license", "position" -> "102")
+      )
     )
   )
 }
